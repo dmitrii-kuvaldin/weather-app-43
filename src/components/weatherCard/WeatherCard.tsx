@@ -8,11 +8,11 @@ interface IWeatherCardProps {
   id: number;
   city: string;
   temp: number;
-  add?: () => void;
-  del?: (id: number) => void;
   favorites: IWeatherData[];
   isNewCard?: boolean;
   isLoading?: boolean;
+  add?: () => void;
+  del?: (id: number) => void;
 }
 
 export default function WeatherCard({ id, city, image, del, temp, add, favorites, isNewCard = true, isLoading}: IWeatherCardProps) {

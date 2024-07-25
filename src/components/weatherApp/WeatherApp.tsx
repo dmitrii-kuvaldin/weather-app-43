@@ -1,17 +1,19 @@
 import { useFormik } from 'formik';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useContext, useState } from 'react';
 import * as Yup from 'yup';
 import { IWeatherData } from '../../types/weather';
 import ErrorPage from '../error/ErrorPage';
 import MyButton from '../myButton/MyButton';
 import WeatherCard from '../weatherCard/WeatherCard';
 import style from './weatherApp.module.css';
+import { WeatherContext } from '../weatherProvider/WeatherProvider';
 
-
+// типизация формы
 interface IFormCity {
   city: string;
 }
 
+// начальное значение данных с сервера о погоде
 const initialWeather: IWeatherData = {
   coord: {
     lon: 0,
@@ -51,20 +53,27 @@ const initialWeather: IWeatherData = {
   cod: 0
 };
 
+// схема валидации
 const schema = Yup.object().shape({
   city: Yup
     .string()
     .required('введите название города!')
 });
 
+// компонент
 export default function WeatherApp() {
 
+  // чтобы забрать данные из контекст я вызываю хук useContext и передаю в него тот контекст из которого забираю данные
+  const {favorites, setFavorites} = useContext(WeatherContext)
+
+  // все стейты компонента
   const [weatherData, setWeatherData] = useState<IWeatherData>(initialWeather);
-  const [error, setError] = useState<string>('');
+  // const [favorites, setFavorites] = useState<IWeatherData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [favorites, setFavorites] = useState<IWeatherData[]>([]);
+  const [error, setError] = useState<string>('');
 
 
+  // объект formik для работы с формами
   const formik = useFormik({
     initialValues: {
       city: ''
@@ -80,22 +89,26 @@ export default function WeatherApp() {
   });
 
 
-
+  // асинхронная функция для получения данных с сервера
   const fetchWeather = async (city: string) => {
+    // включение loader до загрузки
     setIsLoading(true);
     setTimeout(async () => {
       try {
-        console.log(isLoading);
         const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=95abbc8a327ef422700ea93c6cee52f3`);
+        // если запрос пришел с ошибкой бы отправляемся в блок catch
         if (!res.ok) {
+          // 'бросаем' ошибку и преходим в блок catch
           throw new Error(res.statusText);
         }
         const data = await res.json();
         setWeatherData(data);
+        // выключение loader после получения данных
         setIsLoading(false);
       } catch (err: unknown) {
         if (err instanceof Error) {
           setIsLoading(false);
+          // выключение loader после ошибки
           setError(err.message);
         }
       }
@@ -103,17 +116,24 @@ export default function WeatherApp() {
 
   };
 
-  const submitAction = (e: FormEvent) => {
-    e.preventDefault();
+
+  // я делаю много действий на отправке формы, поэтому вынес их в отдельный обработчик
+  const submitAction = (event: FormEvent) => {
+    // обращаясь к объекту event, которое создается в момент события submit в браузере, вызываем его метод .preventDefault() и убираем перезагрузку по умолчанию
+    event.preventDefault();
     formik.handleSubmit();
+    // убираю значения в карточки с предыдущего запроса
     setWeatherData(initialWeather);
-    setError('')
+    // очистка ошибки
+    setError('');
   };
 
+  // добавление карточки в массив
   const addCard = () => {
     setFavorites([...favorites, weatherData]);
   };
 
+  // удаление карточки из массива через метод filter
   const deleteCard = (id: number) => {
     setFavorites(favorites.filter(card => card.id !== id));
   };
@@ -127,8 +147,13 @@ export default function WeatherApp() {
         <MyButton type='submit' name='Search' />
       </form>
       <div className={style.cardWrapper}>
+
+        {/* два типа ошибок обрабатываются в одном компоненте и приходят при разных обстоятельствах */}
+
+        {/* ошибка с сервера */}
         {error && <ErrorPage text={error} type='api' />}
 
+        {/* ошибка валидации */}
         {formik.errors.city && (
           <ErrorPage text={formik.errors.city} type='validation' />
         )}
@@ -146,23 +171,6 @@ export default function WeatherApp() {
           />
         )}
       </div>
-
-      {favorites.length > 0 && (
-        <div>
-          <h1 style={{ color: 'white' }}>Saved Cards:</h1>
-          {favorites.map(el => (
-            <WeatherCard
-              key={el.id}
-              isNewCard={false}
-              favorites={favorites}
-              del={deleteCard}
-              city={el.name}
-              temp={Math.floor(el.main.temp - 273.15)}
-              image={`http://openweathermap.org/img/w/${el.weather[0].icon}.png`}
-              id={el.id} />
-          ))}
-        </div>
-      )}
     </div>
   );
 }

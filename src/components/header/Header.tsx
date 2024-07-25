@@ -16,9 +16,7 @@ export default function Header() {
             className={location.pathname === el.pathname ? styles.active : ''}
             to={el.pathname}>{el.title}</Link>
         ))}
-
       </div>
-
     </header>
   );
 }

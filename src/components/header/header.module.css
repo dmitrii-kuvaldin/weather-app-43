@@ -1,6 +1,6 @@
 .header {
   width: 100%;
-  background-color: rgb(18, 45, 77, 0.5);
+  background-color: rgba(18, 45, 77, 0.5);
   border: 1px #D2D2D2 solid;
   height: 80px;
   display: flex;
